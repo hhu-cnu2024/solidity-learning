@@ -17,7 +17,14 @@ contract MyToken {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
+        _mint(1 * 10 ** uint256(decimals), msg.sender); //transaction에 from에 해당하는 발행자에 바로 접근함
     }
+
+    function _mint(uint256 amount, address owner) internal {
+        totalSupply += amount;
+        balanceOf[owner] += amount;
+    }
+
     //public으로 필드를 만들면 기본적으로 getter가 만들어진다.
     // function totalSupply() external view returns (uint256) {
     //     return totalSupply;
