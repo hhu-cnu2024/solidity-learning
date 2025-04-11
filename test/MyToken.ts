@@ -13,7 +13,7 @@ describe("mytoken deploy", () => {
   //before : 컨트랙트를 미리 실행시키고 기다려줘
   //beforeEach : 각 단위를 하기 전 마다 계속 실행시켜줘
   //종속성이 필요한 코드들끼리 단위를 만든다 describe를 이용해서 서브 그룹들을 만들면된다.
-  before("should deploy", async () => {
+  beforeEach("should deploy", async () => {
     signers = await hre.ethers.getSigners();
     myTokenContract = await hre.ethers.deployContract("MyToken", [
       //deployContract할때, (컨트렉트 배포할때), hardhat ethers는 기본적으로 signer0을 선택한다. (signerfield에서 바꿀 수 있다)
@@ -55,20 +55,34 @@ describe("mytoken deploy", () => {
   describe("Transfer", () => {
     it("should have 0.5MT", async () => {
       const signer1 = signers[1];
-      await myTokenContract.transfer(
-        //transfer 함수는 트렌젝션이 일어난다. (state를 건들기 때문에) myTokenContract에 signerfield가 존재하므로 알아서 서명되고,
-        //트렌젝션전송되고, 영수증처리된다.-->수수료 낸다(state수정이 젤 비싸다(모든 노드가 다 해야하니까))
-        hre.ethers.parseUnits("0.5", decimals),
-        signer1.address
-      );
+      const signer0 = signers[0];
+      await expect(
+        myTokenContract.transfer(
+          //transfer 함수는 트렌젝션이 일어난다. (state를 건들기 때문에) myTokenContract에 signerfield가 존재하므로 알아서 서명되고,
+          //트렌젝션전송되고, 영수증처리된다.-->수수료 낸다(state수정이 젤 비싸다(모든 노드가 다 해야하니까))
+          hre.ethers.parseUnits("0.5", decimals),
+          signer1.address
+        )
+      )
+        .to.emit(myTokenContract, "Transfer")
+        .withArgs(
+          signer0.address,
+          signer1.address,
+          hre.ethers.parseUnits("0.5", decimals)
+        );
+
       //sol 파일은 contract인거고, test파일은 웹 어플리케이션같은 존재다. ts파일에서 네트워크랑 contract로 통신한다고 생각하면될듯
-      console.log(await myTokenContract.balanceOf(signer1.address));
+
       //근데 여기서 balanceOf같은 view(getter)함수는 트렌젝션을 만들지는 않고 그냥 네트워크 노드에 연결해서 api호출로 가져온다.
       //여러개의 노드에 접속해서 전부 같은지 확인해봐야지 무결성을 검증할 수 있는 신뢰도 높은 프로그램이 된다.
-      console.log(await myTokenContract.balanceOf(signers[0].address));
+
       expect(await myTokenContract.balanceOf(signer1.address)).equal(
         hre.ethers.parseUnits("0.5", decimals)
       );
+      /*const filter = myTokenContract.filters.Transfer(signer0.address);
+      const logs = await myTokenContract.queryFilter(filter, 0, "latest");
+      console.log(logs.length);*/ //어플리케이션에서 보통이렇게 한다
+      //단위테스트에서는?
     });
 
     it("should be reverted with insufficient balance error", async () => {
@@ -76,6 +90,7 @@ describe("mytoken deploy", () => {
       await expect(
         myTokenContract.transfer(
           hre.ethers.parseUnits((mintingAmount + 1n).toString(), decimals), //await가 결과를 기다림 뭔진 잘 모르겠지만 예외처리를 위해서 await을 expect 앞에 해줌
+          //await을 expect앞에 쓰면, expect안에가 실행되는동안 발생하는 event에 대해서 처리를 할 수 있다.
           signer1.address
         )
       ).to.be.revertedWith("insufficient balance");
@@ -84,5 +99,6 @@ describe("mytoken deploy", () => {
 });
 //mytoken이라는 token 만듬, 이름 심볼 데시말 스테이트먼트, + 벨런스, 트렌스퍼,  발행, 전송
 /*6주차-1 토큰 발행을 해봤고, 테스트에서 예외처리를 하기 위해서 await의 위치 바꿈. 코드 리팩토링(테스트할때 마다 메세지 수정을 해야한다 이걸 좀 효율적으로)
-궁금증은 왜 beforeEach안하면 오류나냐..
+궁금증은 왜 beforeEach안하고 마지막 2개 describe로 안묶으면오류나지..?
+6주차 -2 : event의 유용성, storage에 모든걸 저장하는건 힘들다
 */
