@@ -6,12 +6,18 @@
 pragma solidity ^0.8.28;
 
 contract MyToken {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed spender, uint256 amount);
+    //위에 문자열들을 그냥 해싱 해버린다. 그렇게 한걸 topic에 보여주고, 영수증에 이벤트가 찍힌다.
     string public name;
     string public symbol;
     uint8 public decimals; //1 wei --> 1*10^-18 ETH uint8 -->8 bit unsigned int
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) allowance;
+
+    // state
 
     constructor(
         string memory _name,
@@ -25,9 +31,25 @@ contract MyToken {
         _mint(_amount * 10 ** uint256(decimals), msg.sender); //transaction에 from에 해당하는 발행자에 바로 접근함
     }
 
+    function approve(address spender, uint256 amount) external {
+        allowance[msg.sender][spender] = amount;
+        emit Approval(spender, amount);
+    }
+
+    function tranferFrom(address from, address to, uint256 amount) external {
+        address spender = msg.sender;
+        require(allowance[from][spender] >= amount, "insufficient allowance");
+        allowance[from][spender] -= amount;
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        emit Transfer(from, to, amount);
+    }
+
     function _mint(uint256 amount, address owner) internal {
         totalSupply += amount;
         balanceOf[owner] += amount;
+
+        emit Transfer(address(0), owner, amount);
     }
 
     function transfer(uint256 amount, address to) external {
@@ -36,6 +58,7 @@ contract MyToken {
         //조건과 예외처리..?
         balanceOf[msg.sender] -= amount;
         balanceOf[to] += amount;
+        emit Transfer(msg.sender, to, amount);
     }
 
     //public으로 필드를 만들면 기본적으로 getter가 만들어진다.
@@ -45,4 +68,11 @@ contract MyToken {
     // function name() external view returns (string){
     //     return name;
     // }
+    /*
+    approve
+     - allow spender address to send my token
+    transferFrom
+     - spender : owner -> target address
+     
+    */
 }
