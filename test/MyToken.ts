@@ -91,9 +91,55 @@ describe("mytoken deploy", () => {
         myTokenContract.transfer(
           hre.ethers.parseUnits((mintingAmount + 1n).toString(), decimals), //await가 결과를 기다림 뭔진 잘 모르겠지만 예외처리를 위해서 await을 expect 앞에 해줌
           //await을 expect앞에 쓰면, expect안에가 실행되는동안 발생하는 event에 대해서 처리를 할 수 있다.
+          //hre.ethers.parseUnits("99.6", decimals),
           signer1.address
         )
       ).to.be.revertedWith("insufficient balance");
+    });
+  });
+  describe("TransferFrom", () => {
+    it("should emit Approval event", async () => {
+      const signer1 = signers[1];
+      await expect(
+        myTokenContract.approve(
+          signer1.address,
+          hre.ethers.parseUnits("10", decimals)
+        )
+      )
+        .to.emit(myTokenContract, "Approval")
+        .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+      //console.log(await myTokenContract.balanceOf(signers[0]));
+      //console.log(await myTokenContract.balanceOf(signers[1]));
+    });
+
+    it("should be reverted with insufficient allowance error", async () => {
+      const signer0 = signers[0];
+      const signer1 = signers[1];
+      await expect(
+        myTokenContract
+          .connect(signer1)
+          .transferFrom(
+            signer0.address,
+            signer1.address,
+            hre.ethers.parseUnits("1", decimals)
+          )
+      ).to.be.revertedWith("insufficient allowance");
+    });
+  });
+  describe("approve and transferFrom", () => {
+    it("should emit Approval event", async () => {
+      const signer0 = signers[0];
+      const signer1 = signers[1];
+      await myTokenContract.approve(
+        signer1.address,
+        hre.ethers.parseUnits("10", decimals)
+      );
+      await myTokenContract
+        .connect(signer1)
+        .transferFrom(signer0, signer1, hre.ethers.parseUnits("1", decimals));
+
+      console.log(await myTokenContract.balanceOf(signers[0]));
+      console.log(await myTokenContract.balanceOf(signers[1]));
     });
   });
 });
