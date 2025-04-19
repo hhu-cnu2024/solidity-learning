@@ -3,9 +3,7 @@ import hre from "hardhat";
 import { expect } from "chai";
 import { MyToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-
-const mintingAmount = 100n;
-const decimals = 18n;
+import { DECIMALS, MINTING_AMOUNT } from "./constant";
 
 describe("mytoken deploy", () => {
   let myTokenContract: MyToken;
@@ -22,8 +20,8 @@ describe("mytoken deploy", () => {
 
       "MyToken",
       "MT",
-      decimals,
-      mintingAmount,
+      DECIMALS,
+      MINTING_AMOUNT,
     ]);
   });
   describe("Basic state value check", () => {
@@ -33,13 +31,13 @@ describe("mytoken deploy", () => {
     it("should return symbol", async () => {
       expect(await myTokenContract.symbol()).equal("MT");
     });
-    it("should return decimals", async () => {
-      expect(await myTokenContract.decimals()).equal(decimals);
+    it("should return DECIMALS", async () => {
+      expect(await myTokenContract.decimals()).equal(DECIMALS);
     });
     //refactoring
     it("should return 100 totalSupply", async () => {
       expect(await myTokenContract.totalSupply()).equal(
-        mintingAmount * 10n ** decimals
+        MINTING_AMOUNT * 10n ** DECIMALS
       );
     });
   });
@@ -48,7 +46,7 @@ describe("mytoken deploy", () => {
     it("should return 100MT balance for signer 0", async () => {
       //왜 signer0이 발행자가 되는거지? hardhat 기본설정
       expect(await myTokenContract.balanceOf(signers[0].address)).equal(
-        mintingAmount * 10n ** decimals
+        MINTING_AMOUNT * 10n ** DECIMALS
       );
     });
   });
@@ -60,7 +58,7 @@ describe("mytoken deploy", () => {
         myTokenContract.transfer(
           //transfer 함수는 트렌젝션이 일어난다. (state를 건들기 때문에) myTokenContract에 signerfield가 존재하므로 알아서 서명되고,
           //트렌젝션전송되고, 영수증처리된다.-->수수료 낸다(state수정이 젤 비싸다(모든 노드가 다 해야하니까))
-          hre.ethers.parseUnits("0.5", decimals),
+          hre.ethers.parseUnits("0.5", DECIMALS),
           signer1.address
         )
       )
@@ -68,7 +66,7 @@ describe("mytoken deploy", () => {
         .withArgs(
           signer0.address,
           signer1.address,
-          hre.ethers.parseUnits("0.5", decimals)
+          hre.ethers.parseUnits("0.5", DECIMALS)
         );
 
       //sol 파일은 contract인거고, test파일은 웹 어플리케이션같은 존재다. ts파일에서 네트워크랑 contract로 통신한다고 생각하면될듯
@@ -77,7 +75,7 @@ describe("mytoken deploy", () => {
       //여러개의 노드에 접속해서 전부 같은지 확인해봐야지 무결성을 검증할 수 있는 신뢰도 높은 프로그램이 된다.
 
       expect(await myTokenContract.balanceOf(signer1.address)).equal(
-        hre.ethers.parseUnits("0.5", decimals)
+        hre.ethers.parseUnits("0.5", DECIMALS)
       );
       /*const filter = myTokenContract.filters.Transfer(signer0.address);
       const logs = await myTokenContract.queryFilter(filter, 0, "latest");
@@ -89,9 +87,9 @@ describe("mytoken deploy", () => {
       const signer1 = signers[1];
       await expect(
         myTokenContract.transfer(
-          hre.ethers.parseUnits((mintingAmount + 1n).toString(), decimals), //await가 결과를 기다림 뭔진 잘 모르겠지만 예외처리를 위해서 await을 expect 앞에 해줌
+          hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS), //await가 결과를 기다림 뭔진 잘 모르겠지만 예외처리를 위해서 await을 expect 앞에 해줌
           //await을 expect앞에 쓰면, expect안에가 실행되는동안 발생하는 event에 대해서 처리를 할 수 있다.
-          //hre.ethers.parseUnits("99.6", decimals),
+          //hre.ethers.parseUnits("99.6", DECIMALS),
           signer1.address
         )
       ).to.be.revertedWith("insufficient balance");
@@ -103,11 +101,11 @@ describe("mytoken deploy", () => {
       await expect(
         myTokenContract.approve(
           signer1.address,
-          hre.ethers.parseUnits("10", decimals)
+          hre.ethers.parseUnits("10", DECIMALS)
         )
       )
         .to.emit(myTokenContract, "Approval")
-        .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+        .withArgs(signer1.address, hre.ethers.parseUnits("10", DECIMALS));
       //console.log(await myTokenContract.balanceOf(signers[0]));
       //console.log(await myTokenContract.balanceOf(signers[1]));
     });
@@ -121,7 +119,7 @@ describe("mytoken deploy", () => {
           .transferFrom(
             signer0.address,
             signer1.address,
-            hre.ethers.parseUnits("10", decimals)
+            hre.ethers.parseUnits("10", DECIMALS)
           )
       ).to.be.revertedWith("insufficient allowance");
       //console.log(await myTokenContract.balanceOf(signers[0]));
@@ -135,19 +133,19 @@ describe("mytoken deploy", () => {
       await expect(
         myTokenContract.approve(
           signer1.address,
-          hre.ethers.parseUnits("10", decimals)
+          hre.ethers.parseUnits("10", DECIMALS)
         )
       )
         .to.emit(myTokenContract, "Approval")
-        .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+        .withArgs(signer1.address, hre.ethers.parseUnits("10", DECIMALS));
 
       await expect(
         myTokenContract
           .connect(signer1)
-          .transferFrom(signer0, signer1, hre.ethers.parseUnits("1", decimals))
+          .transferFrom(signer0, signer1, hre.ethers.parseUnits("1", DECIMALS))
       )
         .to.emit(myTokenContract, "Transfer")
-        .withArgs(signer0, signer1, hre.ethers.parseUnits("1", decimals));
+        .withArgs(signer0, signer1, hre.ethers.parseUnits("1", DECIMALS));
 
       console.log(await myTokenContract.balanceOf(signers[0]));
       console.log(await myTokenContract.balanceOf(signers[1]));
