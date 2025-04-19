@@ -121,22 +121,33 @@ describe("mytoken deploy", () => {
           .transferFrom(
             signer0.address,
             signer1.address,
-            hre.ethers.parseUnits("1", decimals)
+            hre.ethers.parseUnits("10", decimals)
           )
       ).to.be.revertedWith("insufficient allowance");
+      //console.log(await myTokenContract.balanceOf(signers[0]));
+      //console.log(await myTokenContract.balanceOf(signers[1]));
     });
   });
   describe("approve and transferFrom", () => {
-    it("should emit Approval event", async () => {
+    it("should emit Approval and transferFrom event", async () => {
       const signer0 = signers[0];
       const signer1 = signers[1];
-      await myTokenContract.approve(
-        signer1.address,
-        hre.ethers.parseUnits("10", decimals)
-      );
-      await myTokenContract
-        .connect(signer1)
-        .transferFrom(signer0, signer1, hre.ethers.parseUnits("1", decimals));
+      await expect(
+        myTokenContract.approve(
+          signer1.address,
+          hre.ethers.parseUnits("10", decimals)
+        )
+      )
+        .to.emit(myTokenContract, "Approval")
+        .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+
+      await expect(
+        myTokenContract
+          .connect(signer1)
+          .transferFrom(signer0, signer1, hre.ethers.parseUnits("1", decimals))
+      )
+        .to.emit(myTokenContract, "Transfer")
+        .withArgs(signer0, signer1, hre.ethers.parseUnits("1", decimals));
 
       console.log(await myTokenContract.balanceOf(signers[0]));
       console.log(await myTokenContract.balanceOf(signers[1]));
