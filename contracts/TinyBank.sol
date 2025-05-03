@@ -15,7 +15,8 @@ interface IMyToken {
 // 마치 클래스같이 하나의 작업을 해주는 모듈 contract
 // constructor : 생성자느낌
 contract TinyBank {
-    event Staked(address, uint256);
+    event Staked(address from, uint256 amount);
+    event Withdraw(uint256 amount, address to);
 
     IMyToken public stakingToken;
     mapping(address => uint256) public staked; // 누가 얼만큼 예치했는지 고객관리 장부;
@@ -34,5 +35,13 @@ contract TinyBank {
         staked[msg.sender] += _amount;
         totalStaked += _amount;
         emit Staked(msg.sender, _amount);
+    }
+
+    function withdraw(uint256 _amount) external {
+        require(staked[msg.sender] >= _amount, "insufficient staked token");
+        stakingToken.transfer(_amount, msg.sender);
+        staked[msg.sender] -= _amount;
+        totalStaked -= _amount;
+        emit Withdraw(_amount, msg.sender);
     }
 }
