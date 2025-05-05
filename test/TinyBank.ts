@@ -80,6 +80,14 @@ describe("TinyBank", () => {
         //블럭개수가 늘어서 reward가 더 커졌다
       );
     });
+    it("Should rever when changing rewardPerBlock by hacker", async () => {
+      const hacker = signers[3];
+      const rewardToChange = hre.ethers.parseUnits("10000", DECIMALS);
+      //이벤트나 revert같은것을 트리거할때는 await을 앞에
+      await expect(
+        tinyBankC.connect(hacker).setRewardPerBlock(rewardToChange)
+      ).to.be.revertedWith("You are not authorized to manage this contract");
+    });
   });
 });
 //beforeEach로 it마다 contract를 deploy해주기
