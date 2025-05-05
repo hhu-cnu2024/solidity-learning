@@ -5,7 +5,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-contract MyToken {
+import "./ManagedAccess.sol";
+
+//모듈화 유지보수
+
+contract MyToken is
+    ManagedAccess //상속을 이용함
+{
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed spender, uint256 amount);
     //위에 문자열들을 그냥 해싱 해버린다. 그렇게 한걸 topic에 보여주고, 영수증에 이벤트가 찍힌다.
@@ -24,7 +30,8 @@ contract MyToken {
         string memory _symbol,
         uint8 _decimals,
         uint256 _amount
-    ) {
+    ) ManagedAccess(msg.sender, msg.sender) {
+        //super() 상위클래스의 생성자
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
@@ -45,15 +52,20 @@ contract MyToken {
         emit Transfer(from, to, amount);
     }
 
-    function _mint(uint256 amount, address owner) internal {
+    //TTD에 맞게 바꾸기
+    function _mint(uint256 amount, address to) internal {
         totalSupply += amount;
-        balanceOf[owner] += amount;
+        balanceOf[to] += amount;
 
-        emit Transfer(address(0), owner, amount);
+        emit Transfer(address(0), to, amount);
     }
 
-    function mint(uint256 amount, address owner) external {
-        _mint(amount, owner);
+    function mint(uint256 amount, address to) external onlyManager {
+        _mint(amount, to);
+    }
+
+    function setManager(address _manager) external onlyOwner {
+        manager = _manager;
     }
 
     function transfer(uint256 amount, address to) external {
