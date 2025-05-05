@@ -1,4 +1,5 @@
 //test파일은 이름을 다 맞추더라
+//TDD : Test Driven Development : 테스트를 먼저짜고 테스트에 맞게 개발한다
 import hre from "hardhat";
 import { expect } from "chai";
 import { MyToken } from "../typechain-types";
@@ -48,6 +49,14 @@ describe("mytoken deploy", () => {
       expect(await myTokenContract.balanceOf(signers[0].address)).equal(
         MINTING_AMOUNT * 10n ** DECIMALS
       );
+    });
+    //TDD :i hacker가 mint를 시도하면 안되도록 test를 먼저 짜고 거기에 맞춰서 개발해보자
+    it("should return or revert when minting infinitly", async () => {
+      const hacker = signers[2];
+      const mintingAgainAmount = hre.ethers.parseUnits("10000", DECIMALS);
+      await expect(
+        myTokenContract.connect(hacker).mint(mintingAgainAmount, hacker.address)
+      ).to.be.revertedWith("You are not authorized to manage this token");
     });
   });
   describe("Transfer", () => {
