@@ -1,3 +1,10 @@
+// Centralization vs Decentraliazation
+// a single DB    vs Distributed Ledger DB
+// a single BN    vs BN network
+// Governance : 관리, 통치
+// governance --> voting
+// A agenda   --> by vote --> decition
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
@@ -17,7 +24,7 @@ abstract contract ManagedAccess {
     modifier onlyManager() {
         require(
             msg.sender == manager,
-            "You are not authorized to manage this contract"
+            "You are not authorized to manage this contract" // 일반적 메세지(가스비)
         );
         _;
     }
