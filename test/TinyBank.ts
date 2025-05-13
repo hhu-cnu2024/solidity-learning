@@ -9,8 +9,11 @@ describe("TinyBank", () => {
   let myTokenC: MyToken; //모든 그룹핑에서 이 컨트랙트를 쓰기위해서
   let tinyBankC: TinyBank;
   let signers: HardhatEthersSigner[];
+  let managers: HardhatEthersSigner[];
   beforeEach(async () => {
     signers = await hre.ethers.getSigners();
+    managers = [signers[1], signers[2], signers[3], signers[4], signers[5]];
+    //아마도 msg.sender는 myTokenC이라는 스마트 컨트렉트같다..this같은 느낌인건가?
     myTokenC = await hre.ethers.deployContract("MyToken", [
       //생성자 파라미터
 
@@ -18,9 +21,13 @@ describe("TinyBank", () => {
       "MT",
       DECIMALS,
       MINTING_AMOUNT,
+      managers,
+      managers.length,
     ]);
     tinyBankC = await hre.ethers.deployContract("TinyBank", [
       await myTokenC.getAddress(),
+      managers,
+      managers.length,
     ]);
     await myTokenC.setManager(tinyBankC.getAddress());
   });
@@ -60,6 +67,34 @@ describe("TinyBank", () => {
       );
     });
   });
+  describe("MultiManager", async () => {
+    it("should set RewardPerBlock", async () => {
+      for (var i = 0; i < managers.length; i++) {
+        await tinyBankC.connect(managers[i]).confirm();
+        //signer0이 signer0에게 주는 코드 즉 변화가 없다
+      }
+      await expect(
+        tinyBankC.setRewardPerBlock(hre.ethers.parseUnits("15", DECIMALS))
+      )
+        .to.emit(tinyBankC, "SetRewardPerBlock")
+        .withArgs(hre.ethers.parseUnits("15", DECIMALS));
+    });
+    it("should revert when confirm by hacker", async () => {
+      const hacker = signers[10];
+      await expect(tinyBankC.connect(hacker).confirm()).to.be.revertedWith(
+        "You are not a manager"
+      );
+    });
+    it("should revert with not all confirm", async () => {
+      for (var i = 0; i < managers.length - 2; i++) {
+        await tinyBankC.connect(managers[i]).confirm();
+        //signer0이 signer0에게 주는 코드 즉 변화가 없다
+      }
+      await expect(
+        tinyBankC.setRewardPerBlock(hre.ethers.parseUnits("15", DECIMALS))
+      ).to.be.revertedWith("Not all confirmed yet");
+    });
+  });
   describe("reward", () => {
     it("should reward 1MT every blocks", async () => {
       const signer0 = signers[0];
@@ -80,13 +115,13 @@ describe("TinyBank", () => {
         //블럭개수가 늘어서 reward가 더 커졌다
       );
     });
-    it("Should rever when changing rewardPerBlock by hacker", async () => {
+    it("Should revert when changing rewardPerBlock by hacker", async () => {
       const hacker = signers[3];
       const rewardToChange = hre.ethers.parseUnits("10000", DECIMALS);
       //이벤트나 revert같은것을 트리거할때는 await을 앞에
       await expect(
         tinyBankC.connect(hacker).setRewardPerBlock(rewardToChange)
-      ).to.be.revertedWith("You are not authorized to manage this contract");
+      ).to.be.revertedWith("Not all confirmed yet");
     });
   });
 });

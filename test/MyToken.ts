@@ -9,11 +9,13 @@ import { DECIMALS, MINTING_AMOUNT } from "./constant";
 describe("mytoken deploy", () => {
   let myTokenContract: MyToken;
   let signers: HardhatEthersSigner[];
+  let managers: HardhatEthersSigner[];
   //before : 컨트랙트를 미리 실행시키고 기다려줘
   //beforeEach : 각 단위를 하기 전 마다 계속 실행시켜줘
   //종속성이 필요한 코드들끼리 단위를 만든다 describe를 이용해서 서브 그룹들을 만들면된다.
   beforeEach("should deploy", async () => {
     signers = await hre.ethers.getSigners();
+    managers = [signers[1], signers[2], signers[3], signers[4], signers[5]];
     myTokenContract = await hre.ethers.deployContract("MyToken", [
       //deployContract할때, (컨트렉트 배포할때), hardhat ethers는 기본적으로 signer0을 선택한다. (signerfield에서 바꿀 수 있다)
       //그리고 transaction은 반드시 서명이 필요하다, 이때, ethers와 다르게 hardhat ethers는 연결된 signer0으로 내부에서 서명하고,
@@ -23,6 +25,8 @@ describe("mytoken deploy", () => {
       "MT",
       DECIMALS,
       MINTING_AMOUNT,
+      managers,
+      managers.length,
     ]);
   });
   describe("Basic state value check", () => {
