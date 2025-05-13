@@ -6,11 +6,12 @@
 pragma solidity ^0.8.28;
 
 import "./ManagedAccess.sol";
+import "./MultiManagedAccess.sol";
 
 //모듈화 유지보수
 
 contract MyToken is
-    ManagedAccess //상속을 이용함
+    MultiManagedAccess //상속을 이용함
 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed spender, uint256 amount);
@@ -29,8 +30,10 @@ contract MyToken is
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _amount
-    ) ManagedAccess(msg.sender, msg.sender) {
+        uint256 _amount,
+        address[] memory _managers,
+        uint _BMN
+    ) MultiManagedAccess(msg.sender, _managers, msg.sender, _BMN) {
         //super() 상위클래스의 생성자
         name = _name;
         symbol = _symbol;

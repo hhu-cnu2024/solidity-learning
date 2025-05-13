@@ -17,6 +17,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 import "./ManagedAccess.sol";
+import "./MultiManagedAccess.sol";
 
 interface IMyToken {
     function transfer(uint256 amount, address to) external;
@@ -28,22 +29,30 @@ interface IMyToken {
 
 // 마치 클래스같이 하나의 작업을 해주는 모듈 contract
 // constructor : 생성자느낌
-contract TinyBank is ManagedAccess {
+contract TinyBank is MultiManagedAccess {
     event Staked(address from, uint256 amount);
     event Withdraw(uint256 amount, address to);
+    event SetRewardPerBlock(uint amount);
 
     IMyToken public stakingToken;
 
     mapping(address => uint256) public lastClaimedBlock;
-    //address[] public stakedUsers;
     uint256 defaultRewardPerBlock = 1 * 10 ** 18;
     uint256 rewardPerBlock;
+    //uint immutable BACKUP_MANAGER_NUMBERS;
 
     uint256 public totalStaked; // 전체 예치금
     mapping(address => uint256) public staked; // 누가 얼만큼 예치했는지 고객관리 장부;
 
-    constructor(IMyToken _stakingToken) ManagedAccess(msg.sender, msg.sender) {
+    constructor(
+        IMyToken _stakingToken,
+        address[] memory _managers,
+        uint _BMN
+    ) MultiManagedAccess(msg.sender, _managers, msg.sender, _BMN) {
         // 토큰의 일반화, 어떤 토큰으로 작동(deposit, withdraw)할건지 정기기
+        //require(_Managers.length == _manager_numbers, "size unmatched");
+        //Managers = _Managers;
+        //BACKUP_MANAGER_NUMBERS = _manager_numbers;
         stakingToken = _stakingToken;
         rewardPerBlock = defaultRewardPerBlock;
     }
@@ -61,8 +70,10 @@ contract TinyBank is ManagedAccess {
         _; // caller's code
     }
 
-    function setRewardPerBlock(uint256 _amount) external onlyManager {
+    function setRewardPerBlock(uint256 _amount) external onlyAllConfirmed {
         rewardPerBlock = _amount;
+        emit SetRewardPerBlock(_amount);
+        // minting량 투표
     }
 
     function stake(uint256 _amount) external updateReward(msg.sender) {
