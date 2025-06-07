@@ -9,7 +9,7 @@ contract NativeBank {
         lock = true;
         _;
         lock = false;
-    }
+    } // + abstract contract로 만들어서 상속시키는 방법도 있음
 
     function withdraw() external noreentrancy {
         /*require(!lock, "is now working on");
