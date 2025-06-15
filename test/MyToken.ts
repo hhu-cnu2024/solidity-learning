@@ -48,10 +48,13 @@ describe("mytoken deploy", () => {
   });
 
   describe("Mint", () => {
-    it("should return 100MT balance for signer 0", async () => {
+    it("should return initial supply + 1MT balance for signer 0", async () => {
       //왜 signer0이 발행자가 되는거지? hardhat 기본설정
+      const signer0 = signers[0];
+      const oneMt = hre.ethers.parseUnits("1", DECIMALS);
+      await myTokenContract.mint(oneMt, signer0.address);
       expect(await myTokenContract.balanceOf(signers[0].address)).equal(
-        MINTING_AMOUNT * 10n ** DECIMALS
+        MINTING_AMOUNT * 10n ** DECIMALS + oneMt
       );
     });
     //TDD :i hacker가 mint를 시도하면 안되도록 test를 먼저 짜고 거기에 맞춰서 개발해보자

@@ -13,7 +13,8 @@ import "./MultiManagedAccess.sol";
 contract MyToken is
     MultiManagedAccess //상속을 이용함
 {
-    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value); // indexed 트랜젝션 로그에 찍힘 -> 트렌젝션에서
+    // 내용을 검색하기 쉬운 필드로 올라옴
     event Approval(address indexed spender, uint256 amount);
     //위에 문자열들을 그냥 해싱 해버린다. 그렇게 한걸 topic에 보여주고, 영수증에 이벤트가 찍힌다.
     string public name;
@@ -49,6 +50,7 @@ contract MyToken is
     function transferFrom(address from, address to, uint256 amount) external {
         address spender = msg.sender;
         require(allowance[from][spender] >= amount, "insufficient allowance");
+        require(balanceOf[from] >= amount, "insufficient balance");
         allowance[from][spender] -= amount;
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
